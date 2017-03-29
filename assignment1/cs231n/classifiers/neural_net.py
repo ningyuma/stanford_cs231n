@@ -74,7 +74,10 @@ class TwoLayerNet(object):
     # Store the result in the scores variable, which should be an array of      #
     # shape (N, C).                                                             #
     #############################################################################
-    pass
+    f = lambda x: np.maximum(0,x) # activation function
+    h1 = f(np.dot(X, W1) + b1)
+    h2 = np.dot(h1, W2) + b2
+    scores = h2
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
@@ -92,7 +95,9 @@ class TwoLayerNet(object):
     # classifier loss. So that your results match ours, multiply the            #
     # regularization loss by 0.5                                                #
     #############################################################################
-    pass
+    shift_scores = scores - np.max(scores, axis = 1).reshape(-1,1)
+    sf_out = np.exp(shift_scores)/np.sum(np.exp(shift_scores), axis = 1).reshape(-1,1)
+    loss = -np.sum(np.log(sf_out[range(N),list(y)])) / N + 0.5 * reg * (np.sum(W1 * W1) + np.sum(W2 * W2))
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
@@ -104,7 +109,15 @@ class TwoLayerNet(object):
     # and biases. Store the results in the grads dictionary. For example,       #
     # grads['W1'] should store the gradient on W1, and be a matrix of same size #
     #############################################################################
-    pass
+    # gradient of loss func w.r.t scores d_sf / d_score = sf * (1 - sf)
+    d_score = sf_out.copy()
+    d_score[range(N),list(y)] -= 1
+    grads['W2'] = h1.T.dot(d_score) / N + reg * W2
+    grads['b2'] = np.sum(d_score, axis = 0) / N
+    d_h1 = d_score.dot(W2.T)
+    d_h1_ReLU = (X.dot(W1) + b1 >0) * d_h1
+    grads['W1'] = X.T.dot(d_h1_ReLU) / N + reg * W1
+    grads['b1'] = np.sum(d_h1_ReLU, axis = 0) / N
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
@@ -148,7 +161,9 @@ class TwoLayerNet(object):
       # TODO: Create a random minibatch of training data and labels, storing  #
       # them in X_batch and y_batch respectively.                             #
       #########################################################################
-      pass
+      idx = np.random.choice(num_train, batch_size, replace = True)
+      X_batch = X[idx]
+      y_batch = y[idx]
       #########################################################################
       #                             END OF YOUR CODE                          #
       #########################################################################
@@ -163,7 +178,10 @@ class TwoLayerNet(object):
       # using stochastic gradient descent. You'll need to use the gradients   #
       # stored in the grads dictionary defined above.                         #
       #########################################################################
-      pass
+      self.params['W1'] -= learning_rate * grads['W1']      
+      self.params['W2'] -= learning_rate * grads['W2']
+      self.params['b1'] -= learning_rate * grads['b1']
+      self.params['b2'] -= learning_rate * grads['b2']
       #########################################################################
       #                             END OF YOUR CODE                          #
       #########################################################################
@@ -174,6 +192,7 @@ class TwoLayerNet(object):
       # Every epoch, check train and val accuracy and decay learning rate.
       if it % iterations_per_epoch == 0:
         # Check accuracy
+        ###################
         train_acc = (self.predict(X_batch) == y_batch).mean()
         val_acc = (self.predict(X_val) == y_val).mean()
         train_acc_history.append(train_acc)
@@ -208,7 +227,13 @@ class TwoLayerNet(object):
     ###########################################################################
     # TODO: Implement this function; it should be VERY simple!                #
     ###########################################################################
-    pass
+    W1, b1 = self.params['W1'], self.params['b1']
+    W2, b2 = self.params['W2'], self.params['b2']
+    f = lambda x: np.maximum(0,x) # activation function
+    h1 = f(np.dot(X, W1) + b1)
+    h2 = np.dot(h1, W2) + b2
+    scores = h2
+    y_pred = np.argmax(scores, axis = 1)
     ###########################################################################
     #                              END OF YOUR CODE                           #
     ###########################################################################
